@@ -77,12 +77,19 @@ def register_classes(classes: tuple[BlenderTypeClass, ...]):
                 continue
 
     for c in classes:
-        bpy.utils.register_class(c)
+        try:
+            bpy.utils.register_class(c)
+        except ValueError as e:
+            # This assumes that the ValueError is due to the class already being registered
+            print(f"Warning: Attempted to register class {c.__name__} that might already be registered. {e}")
+        except Exception as e:
+            print(f"Error: Failed to register class {c.__name__}. {e}")
+
         if issubclass(c, (bpy.types.Operator, bpy.types.Macro)):
             try:
                 register_operator_keymaps(c)
             except Exception as e:
-                log.warning(f"Failed to register {c.bl_idname} keymaps: {e}")
+                print(f"Warning: Failed to register {c.bl_idname} keymaps: {e}")
 
 
 def unregister_classes(classes: tuple[BlenderTypeClass, ...], reverse=True):
@@ -91,7 +98,13 @@ def unregister_classes(classes: tuple[BlenderTypeClass, ...], reverse=True):
     :param classes: the classes to unregister
     """
     for c in reversed(classes) if reverse else classes:
-        bpy.utils.unregister_class(c)
+        try:
+            bpy.utils.unregister_class(c)
+        except ValueError as e:
+            # This assumes that the ValueError is due to the class not being registered
+            print(f"Warning: Attempted to unregister class {c.__name__} that might not be registered. {e}")
+        except Exception as e:
+            print(f"Error: Failed to unregister class {c.__name__}. {e}")
 
 
 def remove_auto_numbering_suffix(name: str) -> str:

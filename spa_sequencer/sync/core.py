@@ -634,32 +634,58 @@ classes = (TimelineSyncSettings,)
 
 
 def register():
-    register_classes(classes)
+    # Development-only: Forcefully unregister class if already registered
+    # This is a safeguard and should not be necessary in production
+    try:
+        bpy.utils.unregister_class(TimelineSyncSettings)
+    except Exception as e:
+        print(f"Development-only: Could not unregister TimelineSyncSettings: {e}")
 
+    print("Registering sync/core components")
+    bpy.utils.register_class(TimelineSyncSettings)
+    
     # Store Synchronization settings on the WindowManager type
-    # NOTE: this is not saved in the Blender file
-    bpy.types.WindowManager.timeline_sync_settings = bpy.props.PointerProperty(
-        type=TimelineSyncSettings,
-        name="Timeline Synchronization Settings",
-    )
-
+    if not hasattr(bpy.types.WindowManager, 'timeline_sync_settings'):
+        bpy.types.WindowManager.timeline_sync_settings = bpy.props.PointerProperty(
+            type=TimelineSyncSettings,
+            name="Timeline Synchronization Settings",
+        )
+        
     # React to scenes current frame changes
-    bpy.app.handlers.frame_change_post.append(on_frame_changed)
+    if on_frame_changed not in bpy.app.handlers.frame_change_post:
+        bpy.app.handlers.frame_change_post.append(on_frame_changed)
     # React to file opening
-    bpy.app.handlers.load_pre.append(on_load_pre)
-    bpy.app.handlers.load_post.append(on_load_post)
+    if on_load_pre not in bpy.app.handlers.load_pre:
+        bpy.app.handlers.load_pre.append(on_load_pre)
+    if on_load_post not in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.append(on_load_post)
 
-    bpy.app.handlers.undo_post.append(on_undo_redo)
-    bpy.app.handlers.redo_post.append(on_undo_redo)
+    if on_undo_redo not in bpy.app.handlers.undo_post:
+        bpy.app.handlers.undo_post.append(on_undo_redo)
+    if on_undo_redo not in bpy.app.handlers.redo_post:
+        bpy.app.handlers.redo_post.append(on_undo_redo)
 
 
 def unregister():
-    unregister_classes(classes)
+    print("Unregistering sync/core components")
+    try:
+        bpy.utils.unregister_class(TimelineSyncSettings)
+    except RuntimeError as e:
+        print(f"Could not unregister TimelineSyncSettings: {e}")
+    
+    if hasattr(bpy.types.WindowManager, 'timeline_sync_settings'):
+        del bpy.types.WindowManager.timeline_sync_settings
+    
+    # Remove handlers safely
+    if on_frame_changed in bpy.app.handlers.frame_change_post:
+        bpy.app.handlers.frame_change_post.remove(on_frame_changed)
+    if on_load_pre in bpy.app.handlers.load_pre:
+        bpy.app.handlers.load_pre.remove(on_load_pre)
+    if on_load_post in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(on_load_post)
+    if on_undo_redo in bpy.app.handlers.undo_post:
+        bpy.app.handlers.undo_post.remove(on_undo_redo)
+    if on_undo_redo in bpy.app.handlers.redo_post:
+        bpy.app.handlers.redo_post.remove(on_undo_redo)
 
-    del bpy.types.WindowManager.timeline_sync_settings
-    bpy.app.handlers.frame_change_post.remove(on_frame_changed)
-    bpy.app.handlers.load_pre.remove(on_load_pre)
-    bpy.app.handlers.load_post.remove(on_load_post)
-
-    bpy.app.handlers.undo_post.remove(on_undo_redo)
-    bpy.app.handlers.redo_post.remove(on_undo_redo)
+    print("sync/core components unregistered")

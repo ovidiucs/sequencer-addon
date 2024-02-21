@@ -1,6 +1,29 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2023, The SPA Studios. All rights reserved.
 
+import bpy
+import importlib
+
+# List of submodule names as strings
+submodules = [
+    "editorial",
+    "keymaps",
+    "preferences",
+    "render",
+    "sequence",
+    "shared_folders",
+    "shot",
+    "sync",
+]
+
+# Reload guard
+for submodule in submodules:
+    if submodule in locals():
+        importlib.reload(locals()[submodule])
+    else:
+        exec(f"from . import {submodule}")
+
+# Now, you can safely reference the modules directly
 from spa_sequencer import (
     editorial,
     keymaps,
@@ -11,7 +34,6 @@ from spa_sequencer import (
     shot,
     sync,
 )
-
 
 bl_info = {
     "name": "Sequencer",
@@ -24,7 +46,6 @@ bl_info = {
     "category": "SPA",
 }
 
-
 packages = (
     sync,
     shot,
@@ -36,12 +57,16 @@ packages = (
     keymaps,
 )
 
-
 def register():
+    print("Starting addon registration")
     for package in packages:
+        print(f"Registering package: {package.__name__}")
         package.register()
-
+    print("Addon registration completed")
 
 def unregister():
-    for package in packages:
+    print("Starting addon unregistration")
+    for package in reversed(packages):
+        print(f"Unregistering package: {package.__name__}")
         package.unregister()
+    print("Addon unregistration completed")

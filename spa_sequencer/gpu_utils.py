@@ -22,11 +22,14 @@ class OverlayDrawer:
 
     def __init__(self):
         self.format = gpu.types.GPUVertFormat()
-        self.shader = gpu.shader.from_builtin("UNIFORM_COLOR")
+        # Change "UNIFORM_COLOR" to "2D_UNIFORM_COLOR"
+        self.shader = gpu.shader.from_builtin("2D_UNIFORM_COLOR")
 
         self.pos_id = self.format.attr_add(
             id="pos", comp_type="F32", len=2, fetch_mode="FLOAT"
         )
+        # Since you're using a uniform color, you might not need to add a color attribute to the format.
+        # However, if you plan to use per-vertex colors, then keep this line.
         self.color_id = self.format.attr_add(
             id="color", comp_type="F32", len=2, fetch_mode="FLOAT"
         )
